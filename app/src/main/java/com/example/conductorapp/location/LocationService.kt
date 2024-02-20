@@ -17,6 +17,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.type.LatLng
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -27,16 +28,13 @@ class LocationService : LifecycleService() {
     private lateinit var locationClient: FusedLocationProviderClient
     private lateinit var firestore: FirebaseFirestore
     private lateinit var locationCallback: LocationCallback
-
-
+    private lateinit var updateData: Map<String, String>
+    private var lastLocation: Location? = null
 
     override fun onCreate() {
         super.onCreate()
 
-        firestore = FirebaseFirestore.getInstance()
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        locationClient = LocationServices.getFusedLocationProviderClient(this)
-        createLocationCallback()
+        init()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -47,6 +45,14 @@ class LocationService : LifecycleService() {
 
         return super.onStartCommand(intent, flags, startId)
     }
+
+    private fun init(){
+        firestore = FirebaseFirestore.getInstance()
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        locationClient = LocationServices.getFusedLocationProviderClient(this)
+        createLocationCallback()
+    }
+
 
     @SuppressLint("MissingPermission")
     private fun startLocationService() {
@@ -81,7 +87,7 @@ class LocationService : LifecycleService() {
             override fun onLocationResult(locationResult: com.google.android.gms.location.LocationResult) {
                 val location = locationResult.lastLocation
                 updateNotification(location)
-                createOrUpdateDocumentWithLocation(location!!)
+                createOrUpdateDocumentWithLocation(location!!, "active")
             }
         }
     }
@@ -107,27 +113,27 @@ class LocationService : LifecycleService() {
         Log.i("my_tag","Service Stopped")
         stopForeground(true)
         locationClient.removeLocationUpdates(locationCallback)
+        updateLocationNull()
+
+//        updateDocumentWithAnulldditionalData("inactive", "89")
         stopSelf()
     }
 
-
-    private fun createOrUpdateDocumentWithLocation(location: Location) {
+    private fun updateLocationNull(){
         CoroutineScope(Dispatchers.IO).launch {
-            val documentId = "your_document_id_here" // Replace with your desired document ID
+            val documentId = "89" // Replace with your desired document ID
 
-            // Create a map with the initial data
             val initialData = mapOf(
-                "latitude" to location.latitude,
-                "longitude" to location.longitude,
-                "accuracy" to location.accuracy,
-                // Add other location properties as needed
+                "latitude" to null,
+                "longitude" to null,
+                "accuracy" to 0
             )
 
             firestore.collection("userLocations")
                 .document(documentId)
                 .set(initialData)
                 .addOnSuccessListener {
-                    updateDocumentWithAdditionalData(documentId)
+                    updateDocumentWithAdditionalData("inactive", documentId)
                 }
                 .addOnFailureListener { e ->
                     e.printStackTrace()
@@ -135,17 +141,42 @@ class LocationService : LifecycleService() {
         }
     }
 
-    private fun updateDocumentWithAdditionalData(documentId: String) {
 
-        val updateData = mapOf(
-            "status" to "active"
+
+    private fun createOrUpdateDocumentWithLocation(location: Location, status: String) {
+        //wtf does this do?????
+        CoroutineScope(Dispatchers.IO).launch {
+            val documentId = "89" // Replace with your desired document ID
+
+            val initialData = mapOf(
+                "latitude" to location.latitude,
+                "longitude" to location.longitude,
+                "accuracy" to location.accuracy
+            )
+
+            firestore.collection("userLocations")
+                .document(documentId)
+                .set(initialData)
+                .addOnSuccessListener {
+                    updateDocumentWithAdditionalData(status, documentId)
+                }
+                .addOnFailureListener { e ->
+                    e.printStackTrace()
+                }
+        }
+    }
+
+    private fun updateDocumentWithAdditionalData(status: String, documentId: String) {
+
+        updateData = mapOf(
+            "status" to status
         )
 
-        // Update the document in Firestore
         firestore.collection("userLocations")
             .document(documentId)
             .update(updateData)
             .addOnSuccessListener {
+                Log.i("my_tag", "status: $status")
             }
             .addOnFailureListener { e ->
                 e.printStackTrace()
@@ -155,7 +186,7 @@ class LocationService : LifecycleService() {
     private fun Location.toMap(): Map<String, Any?> {
         return mapOf(
             "latitude" to latitude,
-            "longitude" to longitude,
+            "longitude" to longitude
         )
     }
 

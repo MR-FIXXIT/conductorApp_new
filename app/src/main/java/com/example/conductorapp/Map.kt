@@ -126,10 +126,7 @@ class Map : AppCompatActivity(), OnMapReadyCallback,
         Log.i("my_tag", "previous location: $previousLocation")
         Log.i("my_tag", "current location: $currentLocation")
 
-
-
-
-        //         Add marker at the new location with smooth animation
+        //Add marker at the new location with smooth animation
         previousLocation?.let { prevLocation ->
             val interpolator = LinearInterpolator()
             val valueAnimator = ValueAnimator.ofFloat(0f, 1f)
