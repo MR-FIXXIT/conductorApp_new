@@ -13,6 +13,7 @@ class ConHome : AppCompatActivity() {
     private lateinit var btnRideStart: Button
     private lateinit var btnRideStop: Button
     private lateinit var btnSignOut: Button
+    private lateinit var btnScanTicket: Button
     private lateinit var btnMap: Button
     private lateinit var auth: FirebaseAuth
 
@@ -40,6 +41,12 @@ class ConHome : AppCompatActivity() {
             val intent = Intent(this, Map::class.java)
             startActivity(intent)
         }
+
+        btnScanTicket.setOnClickListener {
+            val intent = Intent(this, ScanTicket::class.java)
+            startActivity(intent)
+        }
+
         btnSignOut.setOnClickListener {
             auth.signOut()
             startActivity(Intent(this, ConLogin::class.java))
@@ -52,6 +59,7 @@ class ConHome : AppCompatActivity() {
         btnRideStop = findViewById(R.id.btnRideStop_conHome)
         btnMap = findViewById(R.id.btnMap_conHome)
         btnSignOut = findViewById(R.id.btnSignOut_conHome)
+        btnScanTicket = findViewById(R.id.btnScanTicket_conHome)
         auth = FirebaseAuth.getInstance()
     }
 }
